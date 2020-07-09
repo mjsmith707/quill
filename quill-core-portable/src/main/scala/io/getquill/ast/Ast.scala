@@ -3,8 +3,88 @@ package io.getquill.ast
 import io.getquill.NamingStrategy
 
 //************************************************************
+object AstTags {
+  final val Query: Byte = 0
+  final val Operation: Byte = 1
+  final val Action: Byte = 2
+  final val Value: Byte = 3
+  final val Assignment: Byte = 4
+  final val Function: Byte = 5
+  final val Ident: Byte = 6
+  final val ExternalIdent: Byte = 7
+  final val Property: Byte = 8
+  final val Infix: Byte = 9
+  final val OptionOperation: Byte = 10
+  final val IterableOperation: Byte = 11
+  final val If: Byte = 12
+  final val Dynamic: Byte = 13
+  final val External: Byte = 14
+  final val QuotedReference: Byte = 15
+  final val Block: Byte = 16
+  final val Val: Byte = 17
+  final val Ordering: Byte = 18
+  final val Excluded: Byte = 19
+  final val Existing: Byte = 20
+  final val Entity: Byte = 21
+  final val Filter: Byte = 22
+  final val Map: Byte = 23
+  final val FlatMap: Byte = 24
+  final val ConcatMap: Byte = 25
+  final val SortBy: Byte = 26
+  final val GroupBy: Byte = 27
+  final val Aggregation: Byte = 28
+  final val Take: Byte = 29
+  final val Drop: Byte = 30
+  final val Union: Byte = 31
+  final val UnionAll: Byte = 32
+  final val Join: Byte = 33
+  final val FlatJoin: Byte = 34
+  final val Distinct: Byte = 35
+  final val Nested: Byte = 36
+  final val UnaryOperation: Byte = 37
+  final val BinaryOperation: Byte = 38
+  final val FunctionApply: Byte = 39
+  final val Constant: Byte = 40
+  final val NullValue: Byte = 41
+  final val Tuple: Byte = 42
+  final val CaseClass: Byte = 43
+  final val OptionTableFlatMap: Byte = 44
+  final val OptionTableMap: Byte = 45
+  final val OptionTableExists: Byte = 46
+  final val OptionTableForall: Byte = 47
+  final val OptionFlatten: Byte = 48
+  final val OptionGetOrElse: Byte = 49
+  final val OptionFlatMap: Byte = 50
+  final val OptionMap: Byte = 51
+  final val OptionForall: Byte = 52
+  final val OptionExists: Byte = 53
+  final val OptionContains: Byte = 54
+  final val OptionIsEmpty: Byte = 55
+  final val OptionNonEmpty: Byte = 56
+  final val OptionIsDefined: Byte = 57
+  final val OptionSome: Byte = 58
+  final val OptionApply: Byte = 59
+  final val OptionOrNull: Byte = 60
+  final val OptionGetOrNull: Byte = 61
+  final val OptionNone: Byte = 62
+  final val MapContains: Byte = 63
+  final val SetContains: Byte = 64
+  final val ListContains: Byte = 65
+  final val Update: Byte = 66
+  final val Insert: Byte = 67
+  final val Delete: Byte = 68
+  final val Returning: Byte = 69
+  final val ReturningGenerated: Byte = 70
+  final val Foreach: Byte = 71
+  final val OnConflict: Byte = 72
+
+}
+
+//************************************************************
 
 sealed trait Ast {
+
+  val tag: Byte
 
   /**
    * Return a copy of this AST element with any opinions that it may have set to their neutral position.
@@ -33,7 +113,10 @@ sealed trait Ast {
 
 //************************************************************
 
-sealed trait Query extends Ast
+sealed trait Query extends Ast {
+  override final val tag: Byte = AstTags.Query
+  val queryTag: Byte
+}
 
 /**
  * Entities represent the actual tables/views being selected.
@@ -51,6 +134,7 @@ sealed trait Query extends Ast
  * to `T_PERSON` or `Person`.
  */
 case class Entity(name: String, properties: List[PropertyAlias]) extends Query {
+  override final val queryTag: Byte = AstTags.Entity
   // Technically this should be part of the Entity case class but due to the limitations of how
   // scala creates companion objects, the apply/unapply wouldn't be able to work correctly.
   def renameable: Renameable = Renameable.neutral
@@ -89,18 +173,30 @@ object Entity {
 
 case class PropertyAlias(path: List[String], alias: String)
 
-case class Filter(query: Ast, alias: Ident, body: Ast) extends Query
+case class Filter(query: Ast, alias: Ident, body: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Filter
+}
 
-case class Map(query: Ast, alias: Ident, body: Ast) extends Query
+case class Map(query: Ast, alias: Ident, body: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Map
+}
 
-case class FlatMap(query: Ast, alias: Ident, body: Ast) extends Query
+case class FlatMap(query: Ast, alias: Ident, body: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.FlatMap
+}
 
-case class ConcatMap(query: Ast, alias: Ident, body: Ast) extends Query
+case class ConcatMap(query: Ast, alias: Ident, body: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.ConcatMap
+}
 
 case class SortBy(query: Ast, alias: Ident, criterias: Ast, ordering: Ast)
-  extends Query
+  extends Query {
+  override final val queryTag: Byte = AstTags.SortBy
+}
 
-sealed trait Ordering extends Ast
+sealed trait Ordering extends Ast {
+  override final val tag: Byte = AstTags.Ordering
+}
 case class TupleOrdering(elems: List[Ordering]) extends Ordering
 
 sealed trait PropertyOrdering extends Ordering
@@ -111,17 +207,29 @@ case object DescNullsFirst extends PropertyOrdering
 case object AscNullsLast extends PropertyOrdering
 case object DescNullsLast extends PropertyOrdering
 
-case class GroupBy(query: Ast, alias: Ident, body: Ast) extends Query
+case class GroupBy(query: Ast, alias: Ident, body: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.GroupBy
+}
 
-case class Aggregation(operator: AggregationOperator, ast: Ast) extends Query
+case class Aggregation(operator: AggregationOperator, ast: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Aggregation
+}
 
-case class Take(query: Ast, n: Ast) extends Query
+case class Take(query: Ast, n: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Take
+}
 
-case class Drop(query: Ast, n: Ast) extends Query
+case class Drop(query: Ast, n: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Drop
+}
 
-case class Union(a: Ast, b: Ast) extends Query
+case class Union(a: Ast, b: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Union
+}
 
-case class UnionAll(a: Ast, b: Ast) extends Query
+case class UnionAll(a: Ast, b: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.UnionAll
+}
 
 case class Join(
   typ:    JoinType,
@@ -131,22 +239,36 @@ case class Join(
   aliasB: Ident,
   on:     Ast
 )
-  extends Query
+  extends Query {
+  override final val queryTag: Byte = AstTags.Join
+}
 
-case class FlatJoin(typ: JoinType, a: Ast, aliasA: Ident, on: Ast) extends Query
+case class FlatJoin(typ: JoinType, a: Ast, aliasA: Ident, on: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.FlatJoin
+}
 
-case class Distinct(a: Ast) extends Query
+case class Distinct(a: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Distinct
+}
 
-case class Nested(a: Ast) extends Query
+case class Nested(a: Ast) extends Query {
+  override final val queryTag: Byte = AstTags.Nested
+}
 
 //************************************************************
 
-case class Infix(parts: List[String], params: List[Ast], pure: Boolean)
-  extends Ast
+case class Infix(parts: List[String], params: List[Ast], pure: Boolean) extends Ast {
+  override final val tag: Byte = AstTags.Infix
+}
 
-case class Function(params: List[Ident], body: Ast) extends Ast
+case class Function(params: List[Ident], body: Ast) extends Ast {
+  override final val tag: Byte = AstTags.Function
+}
 
 case class Ident(name: String) extends Ast {
+
+  override final val tag: Byte = AstTags.Ident
+
   def visibility: Visibility = Visibility.Visible
 
   override def neutral: Ident =
@@ -199,6 +321,9 @@ object Ident {
 // Like identity but is but defined in a clause external to the query. Currently this is used
 // for 'returning' clauses to define properties being returned.
 case class ExternalIdent(name: String) extends Ast {
+
+  override final val tag: Byte = AstTags.ExternalIdent
+
   def renameable: Renameable = Renameable.neutral
 
   override def equals(that: Any) =
@@ -272,6 +397,9 @@ object Renameable extends OpinionValues[Renameable] {
  * being used, the default opinion `ByStrategy` is used.
  */
 case class Property(ast: Ast, name: String) extends Ast {
+
+  override final val tag: Byte = AstTags.Property
+
   // Technically this should be part of the Property case class but due to the limitations of how
   // scala creates companion objects, the apply/unapply wouldn't be able to work correctly.
   def renameable: Renameable = Renameable.neutral
@@ -323,77 +451,164 @@ object Property {
   }
 }
 
-sealed trait OptionOperation extends Ast
-case class OptionFlatten(ast: Ast) extends OptionOperation
-case class OptionGetOrElse(ast: Ast, body: Ast) extends OptionOperation
+sealed trait OptionOperation extends Ast {
+  override final val tag: Byte = AstTags.OptionOperation
+  val optionOperationTag: Byte
+}
+case class OptionFlatten(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionFlatten
+}
+case class OptionGetOrElse(ast: Ast, body: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionGetOrElse
+}
 case class OptionFlatMap(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
-case class OptionMap(ast: Ast, alias: Ident, body: Ast) extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionFlatMap
+}
+case class OptionMap(ast: Ast, alias: Ident, body: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionMap
+}
 case class OptionForall(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionForall
+}
 case class OptionExists(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
-case class OptionContains(ast: Ast, body: Ast) extends OptionOperation
-case class OptionIsEmpty(ast: Ast) extends OptionOperation
-case class OptionNonEmpty(ast: Ast) extends OptionOperation
-case class OptionIsDefined(ast: Ast) extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionExists
+}
+case class OptionContains(ast: Ast, body: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionContains
+}
+case class OptionIsEmpty(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionIsEmpty
+}
+case class OptionNonEmpty(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionNonEmpty
+}
+case class OptionIsDefined(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionIsDefined
+}
 case class OptionTableFlatMap(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionTableFlatMap
+}
 case class OptionTableMap(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionTableMap
+}
 case class OptionTableExists(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionTableExists
+}
 case class OptionTableForall(ast: Ast, alias: Ident, body: Ast)
-  extends OptionOperation
-object OptionNone extends OptionOperation
-case class OptionSome(ast: Ast) extends OptionOperation
-case class OptionApply(ast: Ast) extends OptionOperation
-case class OptionOrNull(ast: Ast) extends OptionOperation
-case class OptionGetOrNull(ast: Ast) extends OptionOperation
+  extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionTableForall
+}
+object OptionNone extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionNone
+}
+case class OptionSome(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionSome
+}
+case class OptionApply(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionApply
+}
+case class OptionOrNull(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionOrNull
+}
+case class OptionGetOrNull(ast: Ast) extends OptionOperation {
+  override final val optionOperationTag: Byte = AstTags.OptionGetOrNull
+}
 
-sealed trait IterableOperation extends Ast
-case class MapContains(ast: Ast, body: Ast) extends IterableOperation
-case class SetContains(ast: Ast, body: Ast) extends IterableOperation
-case class ListContains(ast: Ast, body: Ast) extends IterableOperation
+sealed trait IterableOperation extends Ast {
+  override final val tag: Byte = AstTags.IterableOperation
+  val iterableOperationTag: Byte
+}
+case class MapContains(ast: Ast, body: Ast) extends IterableOperation {
+  override final val iterableOperationTag: Byte = AstTags.MapContains
+}
+case class SetContains(ast: Ast, body: Ast) extends IterableOperation {
+  override final val iterableOperationTag: Byte = AstTags.SetContains
+}
+case class ListContains(ast: Ast, body: Ast) extends IterableOperation {
+  override final val iterableOperationTag: Byte = AstTags.ListContains
+}
 
-case class If(condition: Ast, `then`: Ast, `else`: Ast) extends Ast
+case class If(condition: Ast, `then`: Ast, `else`: Ast) extends Ast {
+  override final val tag: Byte = AstTags.If
+}
 
-case class Assignment(alias: Ident, property: Ast, value: Ast) extends Ast
+case class Assignment(alias: Ident, property: Ast, value: Ast) extends Ast {
+  override final val tag: Byte = AstTags.Assignment
+}
 
 //************************************************************
 
-sealed trait Operation extends Ast
+sealed trait Operation extends Ast {
+  override final val tag: Byte = AstTags.Operation
+  val operationTag: Byte
+}
 
-case class UnaryOperation(operator: UnaryOperator, ast: Ast) extends Operation
+case class UnaryOperation(operator: UnaryOperator, ast: Ast) extends Operation {
+  override final val operationTag: Byte = AstTags.UnaryOperation
+}
 case class BinaryOperation(a: Ast, operator: BinaryOperator, b: Ast)
-  extends Operation
-case class FunctionApply(function: Ast, values: List[Ast]) extends Operation
+  extends Operation {
+  override final val operationTag: Byte = AstTags.BinaryOperation
+}
+case class FunctionApply(function: Ast, values: List[Ast]) extends Operation {
+  override final val operationTag: Byte = AstTags.FunctionApply
+}
 
 //************************************************************
 
-sealed trait Value extends Ast
+sealed trait Value extends Ast {
+  override final val tag: Byte = AstTags.Value
+  val valueTag: Byte
+}
 
-case class Constant(v: Any) extends Value
+case class Constant(v: Any) extends Value {
+  override final val valueTag: Byte = AstTags.Constant
+}
 
-object NullValue extends Value
+object NullValue extends Value {
+  override final val valueTag: Byte = AstTags.NullValue
+}
 
-case class Tuple(values: List[Ast]) extends Value
+case class Tuple(values: List[Ast]) extends Value {
+  override final val valueTag: Byte = AstTags.Tuple
+}
 
-case class CaseClass(values: List[(String, Ast)]) extends Value
+case class CaseClass(values: List[(String, Ast)]) extends Value {
+  override final val valueTag: Byte = AstTags.CaseClass
+}
 
 //************************************************************
 
-case class Block(statements: List[Ast]) extends Ast
+case class Block(statements: List[Ast]) extends Ast {
+  override final val tag: Byte = AstTags.Block
+}
 
-case class Val(name: Ident, body: Ast) extends Ast
+case class Val(name: Ident, body: Ast) extends Ast {
+  override final val tag: Byte = AstTags.Val
+}
 
 //************************************************************
 
-sealed trait Action extends Ast
+sealed trait Action extends Ast {
+  override final val tag: Byte = AstTags.Action
+  val actionTag: Byte
+}
 
-case class Update(query: Ast, assignments: List[Assignment]) extends Action
-case class Insert(query: Ast, assignments: List[Assignment]) extends Action
-case class Delete(query: Ast) extends Action
+case class Update(query: Ast, assignments: List[Assignment]) extends Action {
+  override final val actionTag: Byte = AstTags.Update
+}
+case class Insert(query: Ast, assignments: List[Assignment]) extends Action {
+  override final val actionTag: Byte = AstTags.Insert
+}
+case class Delete(query: Ast) extends Action {
+  override final val actionTag: Byte = AstTags.Delete
+}
 
 sealed trait ReturningAction extends Action {
   def action: Ast
@@ -411,25 +626,39 @@ object ReturningAction {
 
 }
 case class Returning(action: Ast, alias: Ident, property: Ast)
-  extends ReturningAction
+  extends ReturningAction {
+  override final val actionTag: Byte = AstTags.Returning
+}
 case class ReturningGenerated(action: Ast, alias: Ident, property: Ast)
-  extends ReturningAction
+  extends ReturningAction {
+  override final val actionTag: Byte = AstTags.ReturningGenerated
+}
 
-case class Foreach(query: Ast, alias: Ident, body: Ast) extends Action
+case class Foreach(query: Ast, alias: Ident, body: Ast) extends Action {
+  override final val actionTag: Byte = AstTags.Foreach
+}
 
 case class OnConflict(
   insert: Ast,
   target: OnConflict.Target,
   action: OnConflict.Action
 )
-  extends Action
+  extends Action {
+  override final val actionTag: Byte = AstTags.OnConflict
+}
 object OnConflict {
 
   case class Excluded(alias: Ident) extends Ast {
+
+    override final val tag: Byte = AstTags.Excluded
+
     override def neutral: Ast =
       alias.neutral
   }
   case class Existing(alias: Ident) extends Ast {
+
+    override final val tag: Byte = AstTags.Existing
+
     override def neutral: Ast =
       alias.neutral
   }
@@ -444,11 +673,17 @@ object OnConflict {
 }
 //************************************************************
 
-case class Dynamic(tree: Any) extends Ast
+case class Dynamic(tree: Any) extends Ast {
+  override final val tag: Byte = AstTags.Dynamic
+}
 
-case class QuotedReference(tree: Any, ast: Ast) extends Ast
+case class QuotedReference(tree: Any, ast: Ast) extends Ast {
+  override final val tag: Byte = AstTags.QuotedReference
+}
 
-sealed trait External extends Ast
+sealed trait External extends Ast {
+  override final val tag: Byte = AstTags.External
+}
 
 /***********************************************************************/
 /*                      Only Quill 2                                   */

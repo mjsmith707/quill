@@ -19,12 +19,14 @@ import scala.collection.immutable.Map
 case class Replacements(map: collection.Map[Ast, Ast]) {
 
   /** First transformed object to meet criteria **/
-  def apply(key: Ast): Ast =
-    map.map { case (k, v) => (k.neutralize, v) }.filter(_._1 == key.neutralize).head._2
+  def apply(key: Ast): Ast = {
+    neutralized(key.neutralize)
+  }
 
   /** First transformed object to meet criteria or none of none meets **/
-  def get(key: Ast): Option[Ast] =
-    map.map { case (k, v) => (k.neutralize, v) }.filter(_._1 == key.neutralize).headOption.map(_._2)
+  def get(key: Ast): Option[Ast] = {
+    neutralized.get(key.neutralize)
+  }
 
   /** Does the map contain a normalized version of the view you want to see */
   def contains(key: Ast): Boolean =
