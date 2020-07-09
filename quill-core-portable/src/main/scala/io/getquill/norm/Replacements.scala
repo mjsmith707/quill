@@ -1,6 +1,10 @@
 package io.getquill.norm
 
+import java.util
+
 import io.getquill.ast.Ast
+
+import scala.collection.JavaConverters._
 import scala.collection.immutable.Map
 
 /**
@@ -18,6 +22,15 @@ import scala.collection.immutable.Map
  */
 case class Replacements(map: collection.Map[Ast, Ast]) {
 
+  private lazy val neutralized = {
+    val m = new util.HashMap[Ast, Ast]()
+    map.foreach {
+      case (k, v) =>
+        m.put(k.neutralize, v)
+    }
+    m.asScala
+  }
+
   /** First transformed object to meet criteria **/
   def apply(key: Ast): Ast = {
     neutralized(key.neutralize)
@@ -29,8 +42,9 @@ case class Replacements(map: collection.Map[Ast, Ast]) {
   }
 
   /** Does the map contain a normalized version of the view you want to see */
-  def contains(key: Ast): Boolean =
-    map.map { case (k, v) => k.neutralize }.toList.contains(key.neutralize)
+  def contains(key: Ast): Boolean = {
+    neutralized.contains(key.neutralize)
+  }
 
   def ++(otherMap: collection.Map[Ast, Ast]): Replacements =
     Replacements(map ++ otherMap)
